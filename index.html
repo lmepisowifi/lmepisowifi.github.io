@@ -629,12 +629,20 @@
             <strong>Disclaimer</strong>
             Flashing firmware can soft-brick your GPON ONU if done improperly. It is possible to recover it using UART, but we are not liable if you accidentally break things.
         </div>
+        <div class="callout mt-3 mb-0">
+            <strong>Not affiliated</strong>
+            TMWI is an independent community project. It is <strong>not affiliated with, endorsed by, or sponsored by Realtek, Prolink or YOTC</strong>. Realtek, Prolink, YOTC and all related names, model numbers and trademarks belong to their respective owners and are used here only to identify the hardware TMWI works with.
+        </div>
     </section>
 
     <!-- ===== Install ===== -->
     <section id="install">
-        <h2 class="section-title">Install <span class="status unknown">Planned</span></h2>
-        <p class="section-intro">A one-file install script is planned. Download it to your phone (Termux) or PC (any terminal), pick your ONT model and enter its SSH or telnet login. The script then extracts the rootfs, modifies it to work with TMWI, flashes it to the next bank and trial boots it for you.</p>
+        <h2 class="section-title">Install <span class="status unknown">Beta</span></h2>
+        <p class="section-intro">A one-file install script does the work. Download it to your phone (Termux) or PC (any terminal) and enter your ONT&rsquo;s SSH or telnet login. The script detects your model by itself, extracts the rootfs, modifies it to work with TMWI, flashes it to the next bank and sets up a trial boot. The bank you are running now is never touched.</p>
+        <div class="callout">
+            <strong>Beta</strong>
+            The install script has not been tested on a real ONT yet. Try it on a unit that has a good second bank, and keep the <code>original-*.sqsh</code> file it saves in <code>~/lme-out</code>. It is your restore point.
+        </div>
 
         <h3 class="sub-title">Preparation</h3>
         <p class="section-intro">Do this first, before you run the script. Choose your device:</p>
@@ -662,7 +670,7 @@
                     <li>
                         <div>
                             <span class="step-title">Delete the entries</span>
-                            Delete any entry in the list, then continue with the steps below.
+                            Delete any entry in the list. This opens telnet on the PGN6401V. Then continue with the steps below.
                         </div>
                     </li>
                 </ol>
@@ -679,41 +687,56 @@
         <ol class="steps">
             <li>
                 <div>
-                    <span class="step-title">Download the script</span>
-                    On your phone (<strong>Termux</strong>) or PC (<strong>any terminal</strong>), download the install script
-                    from <span class="todo">TODO: download link</span>. Make sure the device is on the same network as the ONT.
+                    <span class="step-title">Install the tools</span>
+                    The script needs <code>squashfs-tools</code> and <code>curl</code>, plus <code>openssh</code> if you log in over SSH. It also needs bash 4 or newer, which Termux and any normal Linux already have.
+                    On <strong>Termux</strong>:
+                    <code class="cmd">pkg install squashfs-tools openssh curl</code>
+                    On a <strong>Debian/Ubuntu PC</strong>:
+                    <code class="cmd">sudo apt install squashfs-tools openssh-client curl</code>
                 </div>
             </li>
             <li>
                 <div>
-                    <span class="step-title">Run it and pick your ONT</span>
-                    Start the script with <span class="todo">TODO: run command</span>, then select your model when asked:
-                    <strong>Prolink PGN6401V</strong> or <strong>YOTC M2-2050-G40</strong>.
+                    <span class="step-title">Download the script</span>
+                    In your home folder (<code>cd ~</code>, not <code>/sdcard</code>), download the install script
+                    from <span class="todo">TODO: download link</span>. Make sure the phone or PC is on the same network as the ONT.
+                </div>
+            </li>
+            <li>
+                <div>
+                    <span class="step-title">Run it</span>
+                    Start the script:
+                    <code class="cmd">bash lme-install.sh</code>
+                    There is no model to pick: the script reads it from the ONT (PGN6401V or M2-2050-G40).
                 </div>
             </li>
             <li>
                 <div>
                     <span class="step-title">Enter your credentials</span>
-                    Enter the <strong>SSH</strong> or <strong>telnet</strong> credentials of your ONT when the script asks for them.
+                    The script asks for the ONT&rsquo;s IP address (default <code>192.168.1.1</code>), <strong>telnet</strong> or <strong>SSH</strong>, the port, the username and the password.
+                    On the PGN6401V use the same <strong>superuser</strong> login as the web interface; the username prompt is pre-filled with <code>admin</code>, so type yours if it is different.
+                    The password is not shown and is never saved.
                 </div>
             </li>
             <li>
                 <div>
                     <span class="step-title">Let the script work</span>
-                    Nothing more to do here. The script runs these stages automatically:
+                    Press <strong>Enter</strong> to accept the default answer (yes) when it asks to continue. The script runs these stages:
                     <ul class="plain mt-1 mb-0">
-                        <li><strong>Extracts</strong> the rootfs from the ONT.</li>
+                        <li><strong>Extracts</strong> the rootfs from the ONT and saves a copy as your restore point.</li>
                         <li><strong>Modifies</strong> it to work with TMWI.</li>
                         <li><strong>Flashes</strong> it to the next bank.</li>
-                        <li><strong>Trial boots</strong> the new bank.</li>
+                        <li><strong>Installs TMWI</strong> if you answer yes. The phone or PC downloads it from GitHub, so it needs internet at that moment; the ONT does not.</li>
+                        <li><strong>Arms a trial boot</strong> of the new bank.</li>
                     </ul>
                 </div>
             </li>
             <li>
                 <div>
-                    <span class="step-title">Keep it</span>
-                    If it boots cleanly, choose <strong>Boot once &amp; keep</strong> to make it the default bank.
-                    Changes apply on the next reboot.
+                    <span class="step-title">Reboot and keep it</span>
+                    When the script asks whether to reboot the ONT, answer <strong>y</strong> (the default is no). The ONT starts from the new bank once.
+                    If it boots cleanly, the new bank becomes the default by itself and there is nothing to confirm.
+                    If it does not boot, the bootloader returns to your old bank.
                 </div>
             </li>
             <li>
@@ -974,6 +997,7 @@
     <div class="container">
         lmepisowifi &middot; AGPLv3 &middot;
         <a href="https://github.com/lmepisowifi/tmwipgn6401v" target="_blank" rel="noopener">Source</a>
+        <div class="mt-2">Not affiliated with, endorsed by, or sponsored by Realtek, Prolink or YOTC. All trademarks belong to their respective owners.</div>
     </div>
 </footer>
 
